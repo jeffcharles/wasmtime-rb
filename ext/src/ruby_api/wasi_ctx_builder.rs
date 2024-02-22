@@ -192,18 +192,19 @@ impl WasiCtxBuilder {
         rb_self
     }
 
-    pub fn build_context(&self) -> Result<wasmtime_wasi::WasiCtx, Error> {
-        let mut builder = wasmtime_wasi::WasiCtxBuilder::new();
+    pub fn build_context(&self) -> Result<wasi_common::WasiCtx, Error> {
+        let mut builder = wasi_common::sync::WasiCtxBuilder::new();
         let inner = self.inner.borrow();
 
         if let Some(stdin) = inner.stdin.as_ref() {
             match stdin {
                 ReadStream::Inherit => builder.inherit_stdin(),
-                ReadStream::Path(path) => builder.stdin(file_r(*path).map(wasi_file)?),
+                ReadStream::Path(path) => todo!(), // builder.stdin(file_r(*path).map(wasi_file)?),
                 ReadStream::String(input) => {
-                    // SAFETY: &[u8] copied before calling in to Ruby, no GC can happen before.
-                    let pipe = ReadPipe::from(unsafe { input.as_slice() });
-                    builder.stdin(Box::new(pipe))
+                    todo!()
+                    // // SAFETY: &[u8] copied before calling in to Ruby, no GC can happen before.
+                    // let pipe = ReadPipe::from(unsafe { input.as_slice() });
+                    // builder.stdin(Box::new(pipe))
                 }
             };
         }
@@ -211,14 +212,14 @@ impl WasiCtxBuilder {
         if let Some(stdout) = inner.stdout.as_ref() {
             match stdout {
                 WriteStream::Inherit => builder.inherit_stdout(),
-                WriteStream::Path(path) => builder.stdout(file_w(*path).map(wasi_file)?),
+                WriteStream::Path(path) => todo!(), // builder.stdout(file_w(*path).map(wasi_file)?),
             };
         }
 
         if let Some(stderr) = inner.stderr.as_ref() {
             match stderr {
                 WriteStream::Inherit => builder.inherit_stderr(),
-                WriteStream::Path(path) => builder.stderr(file_w(*path).map(wasi_file)?),
+                WriteStream::Path(path) => todo!(), // builder.stderr(file_w(*path).map(wasi_file)?),
             };
         }
 
@@ -228,13 +229,13 @@ impl WasiCtxBuilder {
                 let arg = RString::try_convert(*item)?;
                 // SAFETY: &str copied before calling in to Ruby, no GC can happen before.
                 let arg = unsafe { arg.as_str() }?;
-                builder.arg(arg).map_err(|e| error!("{}", e))?;
+                builder.arg(arg); // .map_err(|e| error!("{}", e))?;
             }
         }
 
         if let Some(env_hash) = inner.env.as_ref() {
             let env_vec: Vec<(String, String)> = env_hash.to_vec()?;
-            builder.envs(&env_vec).map_err(|e| error!("{}", e))?;
+            builder.envs(&env_vec); // .map_err(|e| error!("{}", e))?;
         }
 
         Ok(builder.build())
@@ -253,9 +254,9 @@ fn file_w(path: RString) -> Result<File, Error> {
         .map_err(|e| error!("Failed to write to file {}\n{}", path, e))
 }
 
-fn wasi_file(file: File) -> Box<wasi_cap_std_sync::file::File> {
+fn wasi_file(file: File) -> Box<wasi_common::sync::file::File> {
     let file = cap_std::fs::File::from_std(file);
-    let file = wasi_cap_std_sync::file::File::from_cap_std(file);
+    let file = wasi_common::sync::file::File::from_cap_std(file);
     Box::new(file)
 }
 

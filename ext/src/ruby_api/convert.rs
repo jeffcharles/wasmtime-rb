@@ -1,7 +1,7 @@
 use crate::{define_rb_intern, err, error, helpers::SymbolEnum};
 use lazy_static::lazy_static;
 use magnus::{Error, IntoValue, RArray, Symbol, TryConvert, TypedData, Value};
-use wasmtime::{ExternRef, Val, ValType};
+use wasmtime::{ExternRef, RefType, Val, ValType};
 
 use super::{func::Func, global::Global, memory::Memory, store::StoreContextValue, table::Table};
 
@@ -23,8 +23,8 @@ lazy_static! {
             (*F32, ValType::F32),
             (*F64, ValType::F64),
             (*V128, ValType::V128),
-            (*FUNCREF, ValType::FuncRef),
-            (*EXTERNREF, ValType::ExternRef),
+            // (*FUNCREF, ValType::FuncRef),
+            // (*EXTERNREF, ValType::ExternRef),
         ];
 
         SymbolEnum::new("WebAssembly type", mapping)
@@ -69,22 +69,23 @@ impl ToWasmVal for Value {
             ValType::I64 => Ok(i64::try_convert(*self)?.into()),
             ValType::F32 => Ok(f32::try_convert(*self)?.into()),
             ValType::F64 => Ok(f64::try_convert(*self)?.into()),
-            ValType::ExternRef => {
-                let extern_ref_value = match self.is_nil() {
-                    true => None,
-                    false => Some(ExternRef::new(ExternRefValue::from(*self))),
-                };
+            // ValType::Ref(RefType::EXTERNREF) => {
+            //     let extern_ref_value = match self.is_nil() {
+            //         true => None,
+            //         false => Some(ExternRef::new(ExternRefValue::from(*self))),
+            //     };
 
-                Ok(Val::ExternRef(extern_ref_value))
-            }
-            ValType::FuncRef => {
-                let func_ref_value = match self.is_nil() {
-                    true => None,
-                    false => Some(*<&Func>::try_convert(*self)?.inner()),
-                };
-                Ok(Val::FuncRef(func_ref_value))
-            }
+            //     Ok(Val::ExternRef(extern_ref_value))
+            // }
+            // ValType::Ref(RefType::FUNCREF) => {
+            //     let func_ref_value = match self.is_nil() {
+            //         true => None,
+            //         false => Some(*<&Func>::try_convert(*self)?.inner()),
+            //     };
+            //     Ok(Val::FuncRef(func_ref_value))
+            // }
             ValType::V128 => err!("converting from Ruby to v128 not supported"),
+            _ => todo!(),
         }
     }
 }
@@ -133,8 +134,9 @@ impl ToSym for ValType {
             ValType::F32 => Symbol::from(*F32),
             ValType::F64 => Symbol::from(*F64),
             ValType::V128 => Symbol::from(*V128),
-            ValType::FuncRef => Symbol::from(*FUNCREF),
-            ValType::ExternRef => Symbol::from(*EXTERNREF),
+            _ => todo!(),
+            // ValType::Ref(RefType::FUNCREF) => Symbol::from(*FUNCREF),
+            // ValType::Ref(RefType::EXTERNREF) => Symbol::from(*EXTERNREF),
         }
     }
 }

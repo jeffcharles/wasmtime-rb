@@ -8,7 +8,7 @@ use magnus::{
     class, function, method, prelude::*, scan_args, typed_data::Obj, DataTypeFunctions, Error,
     IntoValue, Object, Symbol, TypedData, Value,
 };
-use wasmtime::{Extern, Table as TableImpl, TableType};
+use wasmtime::{Extern, RefType, Table as TableImpl, TableType};
 
 define_rb_intern!(
     MIN_SIZE => "min_size",
@@ -54,21 +54,22 @@ impl<'a> Table<'a> {
         let wasm_type = value_type.to_val_type()?;
         let wasm_default = default.to_wasm_val(wasm_type.clone())?;
 
-        let inner = TableImpl::new(
-            store.context_mut(),
-            TableType::new(wasm_type, min, max),
-            wasm_default,
-        )
-        .map_err(|e| error!("{}", e))?;
+        todo!()
+        // let inner = TableImpl::new(
+        //     store.context_mut(),
+        //     TableType::new(wasm_type, min, max),
+        //     wasm_default,
+        // )
+        // .map_err(|e| error!("{}", e))?;
 
-        let table = Self {
-            store: s.into(),
-            inner,
-        };
+        // let table = Self {
+        //     store: s.into(),
+        //     inner,
+        // };
 
-        table.retain_non_nil_extern_ref(default)?;
+        // table.retain_non_nil_extern_ref(default)?;
 
-        Ok(table)
+        // Ok(table)
     }
 
     pub fn from_inner(store: StoreContextValue<'a>, inner: TableImpl) -> Self {
@@ -79,7 +80,7 @@ impl<'a> Table<'a> {
     /// @def type
     /// @return [Symbol] The Wasm type of the elements of this table.
     pub fn type_(&self) -> Result<Symbol, Error> {
-        self.ty().map(|ty| ty.element().to_sym())
+        todo!() // self.ty().map(|ty| ty.element().to_sym())
     }
 
     /// @yard
@@ -101,10 +102,11 @@ impl<'a> Table<'a> {
     /// @param index [Integer]
     /// @return [Object, nil]
     pub fn get(&self, index: u32) -> Result<Value, Error> {
-        match self.inner.get(self.store.context_mut()?, index) {
-            Some(wasm_val) => wasm_val.to_ruby_value(&self.store),
-            None => Ok(().into_value()),
-        }
+        todo!()
+        // match self.inner.get(self.store.context_mut()?, index) {
+        //     Some(wasm_val) => wasm_val.to_ruby_value(&self.store),
+        //     None => Ok(().into_value()),
+        // }
     }
 
     /// @yard
@@ -115,17 +117,18 @@ impl<'a> Table<'a> {
     /// @param value [Object]
     /// @return [void]
     pub fn set(&self, index: u32, value: Value) -> Result<(), Error> {
-        self.inner
-            .set(
-                self.store.context_mut()?,
-                index,
-                value.to_wasm_val(self.value_type()?)?,
-            )
-            .map_err(|e| error!("{}", e))
-            .and_then(|result| {
-                self.retain_non_nil_extern_ref(value)?;
-                Ok(result)
-            })
+        todo!()
+        // self.inner
+        //     .set(
+        //         self.store.context_mut()?,
+        //         index,
+        //         value.to_wasm_val(self.value_type()?)?,
+        //     )
+        //     .map_err(|e| error!("{}", e))
+        //     .and_then(|result| {
+        //         self.retain_non_nil_extern_ref(value)?;
+        //         Ok(result)
+        //     })
     }
 
     /// @yard
@@ -137,17 +140,18 @@ impl<'a> Table<'a> {
     /// @param initial [Object] The initial value for newly added table slots.
     /// @return [void]
     pub fn grow(&self, delta: u32, initial: Value) -> Result<u32, Error> {
-        self.inner
-            .grow(
-                self.store.context_mut()?,
-                delta,
-                initial.to_wasm_val(self.value_type()?)?,
-            )
-            .map_err(|e| error!("{}", e))
-            .and_then(|result| {
-                self.retain_non_nil_extern_ref(initial)?;
-                Ok(result)
-            })
+        todo!()
+        // self.inner
+        //     .grow(
+        //         self.store.context_mut()?,
+        //         delta,
+        //         initial.to_wasm_val(self.value_type()?)?,
+        //     )
+        //     .map_err(|e| error!("{}", e))
+        //     .and_then(|result| {
+        //         self.retain_non_nil_extern_ref(initial)?;
+        //         Ok(result)
+        //     })
     }
 
     /// @yard
@@ -161,13 +165,16 @@ impl<'a> Table<'a> {
     }
 
     fn value_type(&self) -> Result<wasmtime::ValType, Error> {
-        Ok(self.inner.ty(self.store.context()?).element())
+        todo!()
+        // Ok(self.inner.ty(self.store.context()?).element())
     }
 
     fn retain_non_nil_extern_ref(&self, value: Value) -> Result<(), Error> {
-        if wasmtime::ValType::ExternRef == self.value_type()? && !value.is_nil() {
-            self.store.retain(value)?;
-        }
+        // if let Ok(wasmtime::ValType::Ref(RefType::EXTERNREF)) = self.value_type() {
+        //     if !value.is_nil() {
+        //         self.store.retain(value)?;
+        //     }
+        // }
         Ok(())
     }
 

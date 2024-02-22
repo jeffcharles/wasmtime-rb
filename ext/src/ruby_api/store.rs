@@ -8,8 +8,8 @@ use magnus::{
 };
 use std::cell::UnsafeCell;
 use std::convert::TryFrom;
+use wasi_common::{I32Exit, WasiCtx};
 use wasmtime::{AsContext, AsContextMut, Store as StoreImpl, StoreContext, StoreContextMut};
-use wasmtime_wasi::{I32Exit, WasiCtx};
 
 define_rb_intern!(
     WASI_CTX => "wasi_ctx",

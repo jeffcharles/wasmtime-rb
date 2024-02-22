@@ -89,7 +89,11 @@ impl<'a> Func<'a> {
         store.retain(callable.as_value());
 
         let context = store.context_mut();
-        let ty = wasmtime::FuncType::new(params.to_val_type_vec()?, results.to_val_type_vec()?);
+        let ty = wasmtime::FuncType::new(
+            context.engine(),
+            params.to_val_type_vec()?,
+            results.to_val_type_vec()?,
+        );
         let func_closure = make_func_closure(&ty, callable);
         let inner = wasmtime::Func::new(context, ty, func_closure);
 
@@ -166,7 +170,7 @@ impl<'a> Func<'a> {
         let mut context = store.context_mut()?;
         let func_ty = func.ty(&mut context);
         let params = Params::new(&func_ty, args)?.to_vec()?;
-        let mut results = vec![Val::null(); func_ty.results().len()];
+        let mut results = vec![Val::null_extern_ref(); func_ty.results().len()];
 
         func.call(context, &params, &mut results)
             .map_err(|e| store.handle_wasm_error(e))?;

@@ -96,7 +96,9 @@ impl Module {
 
 impl From<ModuleImpl> for Module {
     fn from(inner: ModuleImpl) -> Self {
-        let size = inner.image_range().len();
+        let range = inner.image_range();
+        let size = unsafe { range.end.offset_from(range.start) } as usize;
+        // let size = inner.image_range().len();
 
         Self {
             inner,
