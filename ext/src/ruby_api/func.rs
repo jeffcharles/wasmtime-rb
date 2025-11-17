@@ -175,7 +175,8 @@ impl<'a> Func<'a> {
     ///   end
     ///   func.call(1, 2) # => [2, 3]
     pub fn call(&self, args: &[Value]) -> Result<Value, Error> {
-        Self::invoke(&self.store, &self.inner, args)
+        let ruby = Ruby::get().unwrap();
+        Self::invoke(&ruby, &self.store, &self.inner, args)
     }
 
     pub fn inner(&self) -> &FuncImpl {
@@ -207,6 +208,7 @@ impl<'a> Func<'a> {
     }
 
     pub fn invoke(
+        ruby: &Ruby,
         store: &StoreContextValue,
         func: &wasmtime::Func,
         args: &[Value],
@@ -222,11 +224,13 @@ impl<'a> Func<'a> {
         match results.as_slice() {
             [] => Ok(().into_value()),
             [result] => result.to_ruby_value(store),
-            _ => results
-                .into_iter()
-                .map(|result| result.to_ruby_value(store))
-                .collect::<Result<RArray, _>>()
-                .map(|ary| ary.as_value()),
+            _ => {
+                let v = results
+                    .into_iter()
+                    .map(|result| result.to_ruby_value(store))
+                    .collect::<Result<Vec<Value>, Error>>()?;
+                Ok(ruby.ary_new_from_values(&v).as_value())
+            }
         }
     }
 }
@@ -276,7 +280,9 @@ pub fn make_func_closure(
 
         let rparams = std::iter::once(Ok(wrapped_caller.as_value()))
             .chain(params_iter)
-            .collect::<Result<RArray, _>>()?;
+            .collect::<Result<Vec<Value>, wasmtime::Error>>()?;
+        let ruby = Ruby::get().unwrap();
+        let rparams = ruby.ary_new_from_values(&rparams);
 
         let ruby = Ruby::get().unwrap();
         let callable = ruby.get_inner(callable);
